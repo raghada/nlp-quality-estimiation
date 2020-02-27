@@ -76,11 +76,12 @@ def read_data():
 
 def writeScores(scores):
     """
-    The aim of this function is to find
+    The aim of this function is to write the test set prediction results to a .txt file
+    and save it in the current directory
     
     
     Arguments:
-        scores {[type]} -- [description]
+        scores {[list]} -- [a list of the scores predicted for the test-set]
     """
     fn = "predictions.txt"
     with open(fn, 'w') as output_file:
