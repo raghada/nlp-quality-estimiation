@@ -8,8 +8,10 @@ from scipy.stats.stats import pearsonr
 
 from data_preperation import clean_data_strategy_2, get_GloVe_embedding
 
-LEARNING_RATE = 1e-2
-NUM_EPOCHS = 5
+import torch.nn.functional as F
+
+LEARNING_RATE = 1e-3
+NUM_EPOCHS = 1
 
 
 class SentenceEmbedding(nn.Module):
@@ -17,17 +19,43 @@ class SentenceEmbedding(nn.Module):
     Prepare and encode sentence embeddings
     """
     def __init__(self, embed_size, embed_dim, init):
+        """
+        The class constructor
+        
+        Arguments:
+            embed_size {int} -- the size of the vocabulary 
+            embed_dim {int} -- the embedding dimension
+            init {tensor} -- the pre-trained embedding weights
+        """
         super(SentenceEmbedding, self).__init__()
         self.word_embedding = nn.Embedding(embed_size, embed_dim).from_pretrained(torch.FloatTensor(init), freeze='True')
         self.encoder = HBMP()
 
     def forward(self, input_sentence):
+        """
+        Sentence embedding forward function
+        
+        Arguments:
+            input_sentence {str} -- input sentence to be forwarded
+        
+        Returns:
+            [array] -- the encoded version of the sentence
+        """
         sentence = self.word_embedding(input_sentence)
         embedding = self.encoder(sentence)
         return embedding
 
-    def encode(self, input_sentence):
-        embedding = self.encoder(input_sentence)
+    def encode(self, embedded_sentence):
+        """
+        The sentence embedding encoder
+        
+        Arguments:
+            embedded sentence {array} -- the sentence to be encoded, with its word embedded using GloVe
+        
+        Returns:
+            [array] -- the encoded version of the sentence
+        """
+        embedding = self.encoder(embedded_sentence)
         return embedding
 
 class HBMP(nn.Module):
@@ -35,6 +63,9 @@ class HBMP(nn.Module):
     Hierarchical Bi-LSTM Max Pooling Encoder
     """
     def __init__(self):
+        """
+        The HBMP encoder's constructor
+        """
         super(HBMP, self).__init__()
 
         self.max_pool = nn.AdaptiveMaxPool1d(1)
@@ -91,10 +122,10 @@ class FCClassifier(nn.Module):
         super(FCClassifier, self).__init__()
         self.dropout = 0.25
         self.activation = nn.ReLU()
-        self.seq_in_size = 512*3
+        self.seq_in_size = 300*2
         self.fc_dim = 600
         self.out_dim = 1
-        
+        self.seq_in_size*=6
         self.mlp = nn.Sequential(
             nn.Dropout(p=self.dropout),
             nn.Linear(self.seq_in_size, self.fc_dim),
@@ -106,7 +137,7 @@ class FCClassifier(nn.Module):
             nn.Linear(self.fc_dim//2, self.out_dim))
 
     def forward(self, en, de):
-        features = torch.cat([en, de, torch.abs(en-de)], 1)
+        features = torch.cat([en, de], 1)
         output = self.mlp(features)
         return output
 
@@ -127,22 +158,40 @@ class Model(nn.Module):
       result = self.classifier(en, de)
       return result
 
-def check_pearson(model, iter):
-  all_preds = torch.Tensor()
-  all_scores = torch.Tensor()
+def check_pearson_value(model, iter):
+    """
+    A method to check the performance of the model on the dev set, by computing the pearson coeffient value.
+    
+    Arguments:
+        model {PyTorch model} -- the currently trained model
+        iter {bucket iterator instance} -- dev iterator
+    
+    Returns:
+        [list] -- two list of prediction values and real values 
+    """
+    all_preds = torch.Tensor()
+    all_scores = torch.Tensor()
 
-  model.eval()
-  with torch.no_grad():
-    for _, batch in enumerate(iter):
-      all_preds = torch.cat([all_preds,model.forward(batch).flatten()])
-      all_scores = torch.cat([all_scores,batch.score])
-    r = pearsonr(all_scores, all_preds)[0]
-    print("\nAverage Pearson coefficient on dev set is {}".format(r))
-  model.train()
+    model.eval()
+    with torch.no_grad():
+        for _, batch in enumerate(iter):
+            all_preds = torch.cat([all_preds,model.forward(batch).flatten()])
+            all_scores = torch.cat([all_scores,batch.score])
+        r = pearsonr(all_scores, all_preds)[0]
+        print("\nAverage Pearson coefficient on dev set is {}".format(r))
+    model.train()
 
-  return all_preds, all_scores
+    return all_preds, all_scores
 
 def train(model, train_iter, dev_iter):
+    """
+    The training logic
+    
+    Arguments:
+        model {PyTorch Model} -- the model to be trained
+        train_iter {BucketIterator} -- an iterator that holds the training dataset
+        dev_iter {BucketIterator} -- an iterator that holds the dev dataset
+    """
     optim = torch.optim.Adam(model.parameters(), lr=0.001)
 
     loss = []
@@ -177,12 +226,15 @@ def train(model, train_iter, dev_iter):
         print('\n[Epoch {:<3}] ended with train_loss: {:6.2f}'.format(eidx, loss_per_token))
         # Evaluate on valid set
         model.eval()
-        check_pearson(model, dev_iter)
+        check_pearson_value(model, dev_iter)
 
         torch.save(model, './models/model_strategy_2_epoch_{}'.format(eidx))
 
 def main_strategy_2():
+    """
+    the main starting point for strategy 2
+    """
     en_text, de_text, train_iter, dev_iter, _ = clean_data_strategy_2()
     embedding_en, embedding_de = get_GloVe_embedding(en_text, de_text)
-    model = Model(len(en_text), len(de_text), 300, embedding_en, embedding_de)
+    model = Model(len(en_text.vocab), len(de_text.vocab), 300, embedding_en, embedding_de)
     train(model, train_iter, dev_iter)

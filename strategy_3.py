@@ -8,9 +8,10 @@ from torch.autograd import Variable
 from scipy.stats.stats import pearsonr
 
 from data_preperation import clean_data_strategy_3, prepare_batch_strategy_3
+import torch.nn.functional as F
 
 LEARNING_RATE = 1e-4
-NUM_EPOCHS = 7
+NUM_EPOCHS = 1
 
 
 class FCClassifier(nn.Module):
@@ -51,7 +52,17 @@ class Model(nn.Module):
       result = self.classifier(en, de)
       return result
 
-def check_pearson(model, iter):
+def check_pearson_value(model, iter):
+    """
+    A method to check the performance of the model on the dev set, by computing the pearson coeffient value.
+    
+    Arguments:
+        model {PyTorch model} -- the currently trained model
+        iter {bucket iterator instance} -- dev iterator
+    
+    Returns:
+        [list] -- two list of prediction values and real values 
+    """
     all_preds = torch.Tensor()
     all_scores = torch.Tensor()
     model.eval()
@@ -67,6 +78,14 @@ def check_pearson(model, iter):
     return all_preds, all_scores
 
 def train(model, train_iter, dev_iter):
+    """
+    Strategy 3 training logic
+    
+    Arguments:
+        model {PyTorch Model} -- the model to be trained
+        train_iter {BucketIterator} -- an iterator that holds the training dataset
+        dev_iter {BucketIterator} -- an iterator that holds the dev dataset
+    """
     
     optim = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
@@ -105,7 +124,7 @@ def train(model, train_iter, dev_iter):
         
         # Evaluate on valid set
         model.eval()
-        check_pearson(model, dev_iter)
+        check_pearson_value(model, dev_iter)
         torch.save(model, 'model_strategy_3_epoch_{}'.format(eidx))
 
 def main_strategy_3():

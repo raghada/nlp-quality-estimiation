@@ -2,6 +2,7 @@ import os
 import string
 
 import nltk
+nltk.download('stopwords')
 import numpy as np
 import pandas as pd
 import spacy
@@ -31,16 +32,6 @@ def get_df(split='train'):
         [dataframe] -- [the processed data contained in a dataframe]
     """
     
-    # if we are to follow the split provided or not
-    # if not, we will read everything in a single file
-    if (split):
-      pre = '.'
-    else:
-      pre = ''        
-
-    src = pre + 'ende.src'
-    scores = pre + 'ende.scores'
-    mt = pre + 'ende.mt'
     en = pd.DataFrame(columns=['id','en'])
     de = pd.DataFrame(columns=['id','de'])
     score = pd.DataFrame(columns=['id','score'])
@@ -88,13 +79,11 @@ def writeScores(scores):
         for x in scores:
             output_file.write("{}\n".format(x))
 
-
 ##############################################
 ##############################################
 ################ Strategy 2 ##################
 ##############################################
 ##############################################
-
 
 def clean_data_strategy_2():
     """
@@ -106,7 +95,20 @@ def clean_data_strategy_2():
         [tuple] -- [tuple of values, includes the vocabulary lists, as well as train, dev, and test bucket iterators]
     """
 
+    import nltk
+    import ssl
+
+    try:
+        _create_unverified_https_context = ssl._create_unverified_context
+    except AttributeError:
+        pass
+    else:
+        ssl._create_default_https_context = _create_unverified_https_context
+
     nltk.download('stopwords')
+
+    os.system('python3 -m spacy download en')
+    os.system('python3 -m spacy download de')
 
     stop_words_en = set(stopwords.words('english'))
     stop_words_de = set(stopwords.words('german'))
@@ -120,9 +122,7 @@ def clean_data_strategy_2():
     data_fields = [('en', en_text), ('de', de_text), ('score',SCORE)]
     test_data_fields = [('en', en_text), ('de', de_text)]
 
-    # train, val = data.TabularDataset.splits(path='./', train='train.csv', validation='val.csv', format='csv', fields=data_fields, skip_header=True)
-    train_val = data.TabularDataset(path='./train_val.csv', format='csv', fields=data_fields, skip_header=True)
-    train, val = train_val.split(split_ratio=0.7)
+    train, val = data.TabularDataset.splits(path='./', train='train.csv', validation='val.csv', format='csv', fields=data_fields, skip_header=True)
     test = data.TabularDataset(path='./test.csv', format='csv', fields=test_data_fields, skip_header=True)
 
     de_text.build_vocab(train, min_freq=2)
@@ -135,7 +135,7 @@ def clean_data_strategy_2():
     
     return en_text, de_text, train_iter, dev_iter, test_iter
 
-def get_en_word_emb(word):
+def get_en_word_emb(nlp_en, word):
     """return the embedding of the received English word
     
     Arguments:
@@ -143,7 +143,7 @@ def get_en_word_emb(word):
     """
     return nlp_en(word).vector
 
-def get_de_word_emb(word):
+def get_de_word_emb(nlp_de, word):
     """return the embedding of the received German word
     
     Arguments:
@@ -162,25 +162,25 @@ def get_GloVe_embedding(en_text, de_text):
     Returns:
         [numpy array] -- [two numpy arrays for the embedding of the two languages]
     """
-    '''
-    !spacy download en_core_web_md
-    !spacy link en_core_web_md en300
+    os.system('spacy download en_core_web_md')
+    os.system('spacy link en_core_web_md en300')
 
-    !spacy download de_core_news_md
-    !spacy link de_core_news_md de300
-    '''
-    nlp_de =spacy.load('de300')
-    nlp_en =spacy.load('en300')
+    os.system('spacy download de_core_news_md')
+    os.system('spacy link de_core_news_md de300')
+
+    
+    nlp_de = spacy.load('de300')
+    nlp_en = spacy.load('en300')
 
     embedding_matrix_en = np.zeros((len(en_text.vocab), 300))
     embedding_matrix_de = np.zeros((len(de_text.vocab), 300))
     
     for i, word in tqdm(enumerate(en_text.vocab.itos)):
-        embedding_vector = get_en_word_emb(word)
+        embedding_vector = get_en_word_emb(nlp_en, word)
         embedding_matrix_en[i] = embedding_vector
 
     for i, word in tqdm(enumerate(de_text.vocab.itos)):
-        embedding_vector = get_en_word_emb(word)
+        embedding_vector = get_en_word_emb(nlp_de, word)
         embedding_matrix_de[i] = embedding_vector
 
     return embedding_matrix_en, embedding_matrix_de
@@ -244,7 +244,6 @@ def prepare_batch_strategy_3(batch):
         embed_de[i] = de_embeddings[i]
 
     return torch.from_numpy(embed_en), torch.from_numpy(embed_de)
-
 
 ##############################################
 ##############################################
