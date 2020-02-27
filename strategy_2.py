@@ -9,7 +9,7 @@ from scipy.stats.stats import pearsonr
 from data_preperation import clean_data_strategy_2, get_GloVe_embedding
 
 LEARNING_RATE = 1e-2
-NUM_EPOCHS = 30
+NUM_EPOCHS = 5
 
 
 class SentenceEmbedding(nn.Module):

@@ -46,18 +46,18 @@ def get_df(split='train'):
     score = pd.DataFrame(columns=['id','score'])
     
     count = 0
-    with open('./'+split+ mt,'r') as f:
+    with open('./ende_data/'+split+ mt,'r') as f:
         for line in f:
             de.loc[len(de)] = [count, line[:-1]]
             count+=1
     count = 0
-    with open('./'+split+src,'r') as f:
+    with open('./ende_data/'+split+src,'r') as f:
         for line in f:
             en.loc[len(en)] = [count, line[:-1]]
             count+=1
     if split != 'test':
         count = 0
-        with open('./'+split+scores,'r') as f:
+        with open('./ende_data/'+split+scores,'r') as f:
             for line in f:
                 score.loc[len(score)] = [count, float(line[:-1])]
                 count+=1

@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+from scipy.stats.stats import pearsonr
 
 from data_preperation import clean_data_strategy_3, prepare_batch_strategy_3
 
@@ -53,8 +54,6 @@ class Model(nn.Module):
 def check_pearson(model, iter):
     all_preds = torch.Tensor()
     all_scores = torch.Tensor()
-    from scipy.stats.stats import pearsonr
-
     model.eval()
     with torch.no_grad():
         for _, batch in enumerate(iter):
