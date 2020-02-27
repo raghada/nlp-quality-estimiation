@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+from scipy.stats.stats import pearsonr
 
 from data_preperation import clean_data_strategy_2, get_GloVe_embedding
 
@@ -129,7 +130,6 @@ class Model(nn.Module):
 def check_pearson(model, iter):
   all_preds = torch.Tensor()
   all_scores = torch.Tensor()
-  from scipy.stats.stats import pearsonr
 
   model.eval()
   with torch.no_grad():
@@ -137,7 +137,7 @@ def check_pearson(model, iter):
       all_preds = torch.cat([all_preds,model.forward(batch).flatten()])
       all_scores = torch.cat([all_scores,batch.score])
     r = pearsonr(all_scores, all_preds)[0]
-    print(f"\nAverage Pearson coefficient on dev set is {r}")
+    print("\nAverage Pearson coefficient on dev set is {}".format(r))
   model.train()
 
   return all_preds, all_scores
@@ -171,15 +171,15 @@ def train(model, train_iter, dev_iter):
             if batch_idx % 10 == 0:
                 # Print progress
                 loss_per_token = epoch_loss / epoch_items
-                print(f'[Epoch {eidx:<3}] loss: {loss_per_token:6.2f}')
+                print('[Epoch {:<3}] loss: {:6.2f}'.format(eidx, loss_per_token))
 
 
-        print(f'\n[Epoch {eidx:<3}] ended with train_loss: {loss_per_token:6.2f}')
+        print('\n[Epoch {:<3}] ended with train_loss: {:6.2f}'.format(eidx, loss_per_token))
         # Evaluate on valid set
         model.eval()
         check_pearson(model, dev_iter)
 
-        torch.save(model, f'./models/model_strategy_1_epoch_{eidx}')
+        torch.save(model, './models/model_strategy_2_epoch_{}'.format(eidx))
 
 def main_strategy_2():
     en_text, de_text, train_iter, dev_iter, _ = clean_data_strategy_2()
