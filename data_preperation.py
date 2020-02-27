@@ -107,6 +107,15 @@ def writeScores(scores):
 
 
 def clean_data_strategy_2():
+    """
+    The aim of this method is to prepare the data to be trained using Strategy 2
+    in this function, we use torchtext to preprocess the data, by removing stopwords and punctuations, building the vocabulary lists
+    for both languages, and spliting the training, validation(dev) and testing data
+
+    Returns:
+        [tuple] -- [tuple of values, includes the vocabulary lists, as well as train, dev, and test bucket iterators]
+    """
+
     nltk.download('stopwords')
 
     stop_words_en = set(stopwords.words('english'))
@@ -137,12 +146,32 @@ def clean_data_strategy_2():
     return en_text, de_text, train_iter, dev_iter, test_iter
 
 def get_en_word_emb(word):
-  return nlp_en(word).vector
+    """return the embedding of the received English word
+    
+    Arguments:
+        word {str} -- [the word that we want to retrieve the embedding of]
+    """
+    return nlp_en(word).vector
 
 def get_de_word_emb(word):
-  return nlp_de(word).vector
+    """return the embedding of the received German word
+    
+    Arguments:
+        word {str} -- [the word that we want to retrieve the embedding of]
+    """
+    return nlp_de(word).vector
 
 def get_GloVe_embedding(en_text, de_text):
+    """
+    Get GloVe embedding for all the words in the dataset
+    
+    Arguments:
+        en_text {list} -- [the English vocabular list]
+        de_text {list} -- [the German vocabulary list]
+    
+    Returns:
+        [numpy array] -- [two numpy arrays for the embedding of the two languages]
+    """
     '''
     !spacy download en_core_web_md
     !spacy link en_core_web_md en300
@@ -173,6 +202,14 @@ def get_GloVe_embedding(en_text, de_text):
 ##############################################
 
 def clean_data_strategy_3():
+    """
+    The aim of this method is to prepare the data to be trained using Strategy 3
+    in this function, we use torchtext to preprocess the data, by removing stopwords and punctuations, building the vocabulary lists
+    for both languages, and spliting the training, validation(dev) and testing data
+    
+    Returns:
+        [tuple] -- [tuple of values which includes train, dev, and test bucket iterators]
+    """
     nltk.download('stopwords')
     stop_words_en = set()
     stop_words_de = set()
@@ -196,6 +233,15 @@ def clean_data_strategy_3():
     return train_iter, dev_iter, test_iter
 
 def prepare_batch_strategy_3(batch):
+    """
+    Find the sentence embedding for all the sentence in the current batch
+    
+    Arguments:
+        batch {batch object} -- [the batch object returned from the bucket iterator to be processed]
+    
+    Returns:
+        [torch tensor] -- [two tensors, one for each language, for both English and German sentences embeddings]
+    """
     sntnc_model = SentenceTransformer('distiluse-base-multilingual-cased')
     embed_en = np.zeros((len(batch.en), 512))
     embed_de = np.zeros((len(batch.de), 512))
