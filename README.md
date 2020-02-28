@@ -5,7 +5,7 @@ Natural Language Processing (NLP hereafter) is taken the world by storm, it beco
 In this project, we implemented different approaches to tackle this problem, starting from the use of traditional ML approaches, and concluding with more sophisticated ones that perform better in the provided data-set. 
 
 
-To run the project, please follow the following steps:
+**To run the project, please follow the following steps:**
 
 1. Clone the repo by using the following command:
 
@@ -27,6 +27,6 @@ To run the project, please follow the following steps:
 
     `python3 main.py --strategy 4`
 
-Note: sending the value 4 will run the project with all strategies, if you wish to specifiy a strategy, please indicate its number (1, 2, or 3)
+**Note: sending the value 4 will run the project with all strategies, if you wish to specifiy a strategy, please indicate its number (1, 2, or 3)**
 
 
