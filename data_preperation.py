@@ -2,7 +2,6 @@ import os
 import string
 
 import nltk
-nltk.download('stopwords')
 import numpy as np
 import pandas as pd
 import spacy
@@ -31,7 +30,10 @@ def get_df(split='train'):
     Returns:
         [dataframe] -- [the processed data contained in a dataframe]
     """
-    
+    src = '.ende.src'
+    scores = '.ende.scores'
+    mt = 'ende.mt'
+
     en = pd.DataFrame(columns=['id','en'])
     de = pd.DataFrame(columns=['id','de'])
     score = pd.DataFrame(columns=['id','score'])
@@ -60,6 +62,7 @@ def read_data():
         This function checks whether or not data has been previously read and stored in data frames
         if not, it will read them    
     """
+
     if not os.path.exists("train.csv"):
         get_df('train').to_csv("train.csv", index=False)
         get_df('dev').to_csv("val.csv", index=False)
@@ -79,6 +82,107 @@ def writeScores(scores):
         for x in scores:
             output_file.write("{}\n".format(x))
 
+def download_dependencies():
+    os.system('spacy download en_core_web_md')
+    os.system('spacy link en_core_web_md en300')
+
+    os.system('spacy download de_core_news_md')
+    os.system('spacy link de_core_news_md de300')
+
+    os.system('python3 -m spacy download en')
+    os.system('python3 -m spacy download de')
+
+
+    import nltk
+    import ssl
+
+    try:
+        _create_unverified_https_context = ssl._create_unverified_context
+    except AttributeError:
+        pass
+    else:
+        ssl._create_default_https_context = _create_unverified_https_context
+
+    nltk.download('stopwords')
+
+
+    if not os.path.exists('ende_data.zip'):
+        os.system('wget -O ende_data.zip https://competitions.codalab.org/my/datasets/download/c748d2c0-d6be-4e36-9f12-ca0e88819c4d')
+        os.system('unzip ende_data.zip')
+
+##############################################
+##############################################
+################ Strategy 1 ##################
+##############################################
+##############################################
+
+def clean_data_strategy_1():
+
+    nlp_de =spacy.load('de300')
+    nlp_en =spacy.load('en300')
+
+    #EN-DE files
+    de_train_src = get_embeddings("./train.ende.src",nlp_en,'en')
+    de_train_mt = get_embeddings("./train.ende.mt",nlp_de,'de')
+
+    f_train_scores = open("./train.ende.scores",'r')
+    de_train_scores = f_train_scores.readlines()
+
+    de_val_src = get_embeddings("./dev.ende.src",nlp_en,'en')
+    de_val_mt = get_embeddings("./dev.ende.mt",nlp_de,'de')
+
+    f_val_scores = open("./dev.ende.scores",'r')
+    de_val_scores = f_val_scores.readlines()
+
+    #Put the features into a list
+    X_train= [np.array(de_train_src),np.array(de_train_mt)]
+    X_train_de = np.array(X_train).transpose()
+
+    X_val = [np.array(de_val_src),np.array(de_val_mt)]
+    X_val_de = np.array(X_val).transpose()
+
+    #Scores
+    train_scores = np.array(de_train_scores).astype(float)
+    y_train_de =train_scores
+
+    val_scores = np.array(de_val_scores).astype(float)
+    y_val_de =val_scores
+    
+    return X_train_de, X_val_de, y_train_de, y_val_de
+
+def get_sentence_emb(line,nlp,lang, stop_words_en, stop_words_de):
+    if lang == 'en':
+        text = line.lower()
+        l = [token.lemma_ for token in nlp.tokenizer(text)]
+        l = ' '.join([word for word in l if word not in stop_words_en])
+
+    elif lang == 'de':
+        text = line.lower()
+        l = [token.lemma_ for token in nlp.tokenizer(text)]
+        l= ' '.join([word for word in l if word not in stop_words_de])
+
+    sen = nlp(l)
+    return sen.vector
+
+def get_embeddings(f,nlp,lang):
+    file = open(f) 
+    lines = file.readlines() 
+    sentences_vectors =[]
+
+    stop_words_en = set(stopwords.words('english'))
+    stop_words_de = set(stopwords.words('german'))
+
+    for l in lines:
+        vec = get_sentence_emb(l,nlp,lang, stop_words_en, stop_words_de)
+        if vec is not None:
+            vec = np.mean(vec)
+            sentences_vectors.append(vec)
+        else:
+            print("didn't work :", l)
+            sentences_vectors.append(0)
+
+    return sentences_vectors
+
 ##############################################
 ##############################################
 ################ Strategy 2 ##################
@@ -95,23 +199,9 @@ def clean_data_strategy_2():
         [tuple] -- [tuple of values, includes the vocabulary lists, as well as train, dev, and test bucket iterators]
     """
 
-    import nltk
-    import ssl
-
-    try:
-        _create_unverified_https_context = ssl._create_unverified_context
-    except AttributeError:
-        pass
-    else:
-        ssl._create_default_https_context = _create_unverified_https_context
-
-    nltk.download('stopwords')
-
-    os.system('python3 -m spacy download en')
-    os.system('python3 -m spacy download de')
-
     stop_words_en = set(stopwords.words('english'))
     stop_words_de = set(stopwords.words('german'))
+
     [stop_words_en.add(punct) for punct in string.punctuation]
     [stop_words_de.add(punct) for punct in string.punctuation]
 
@@ -128,7 +218,6 @@ def clean_data_strategy_2():
     de_text.build_vocab(train, min_freq=2)
     en_text.build_vocab(train, min_freq=2)
 
-    # train_val_iter = data.BucketIterator(train_val, batch_size=64)
     train_iter, dev_iter, test_iter = data.BucketIterator.splits((train, val, test), batch_size=64, sort=False, shuffle=False)
     dev_iter.train = False
     test_iter.train = False
@@ -162,13 +251,7 @@ def get_GloVe_embedding(en_text, de_text):
     Returns:
         [numpy array] -- [two numpy arrays for the embedding of the two languages]
     """
-    os.system('spacy download en_core_web_md')
-    os.system('spacy link en_core_web_md en300')
 
-    os.system('spacy download de_core_news_md')
-    os.system('spacy link de_core_news_md de300')
-
-    
     nlp_de = spacy.load('de300')
     nlp_en = spacy.load('en300')
 
@@ -200,7 +283,6 @@ def clean_data_strategy_3():
     Returns:
         [tuple] -- [tuple of values which includes train, dev, and test bucket iterators]
     """
-    nltk.download('stopwords')
     stop_words_en = set()
     stop_words_de = set()
     [stop_words_en.add(punct) for punct in string.punctuation]
