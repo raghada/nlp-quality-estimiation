@@ -5,7 +5,9 @@ Natural Language Processing (NLP hereafter) is taken the world by storm, it beco
 In this project, we implemented different approaches to tackle this problem, starting from the use of traditional ML approaches, and concluding with more sophisticated ones that perform better in the provided data-set. 
 
 
-Please use this to install requirmenets.txt
+To run the project, please follow the following steps:
 
-pip install -r requirements.txt
+1. install requirmenets.txt, using the following command:
+
+`pip install -r requirements.txt`
 
