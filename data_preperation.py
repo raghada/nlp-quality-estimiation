@@ -83,6 +83,9 @@ def writeScores(scores):
             output_file.write("{}\n".format(x))
 
 def download_dependencies():
+    """
+    Downloads the necessary packages for the project to run
+    """
 
     os.system('pip install -e git+git://github.com/UKPLab/sentence-transformers@a96ccd3#egg=sentence-transformers')
     os.system('spacy download en_core_web_md')
@@ -119,7 +122,12 @@ def download_dependencies():
 ##############################################
 
 def clean_data_strategy_1():
+    """
+    The aim of this method is to prepare the data to be trained using Strategy 1
 
+    Returns:
+        [tuple] -- train and validation data
+    """
     nlp_de =spacy.load('de300')
     nlp_en =spacy.load('en300')
 
@@ -153,6 +161,9 @@ def clean_data_strategy_1():
     return X_train_de, X_val_de, y_train_de, y_val_de
 
 def get_sentence_emb(line,nlp,lang, stop_words_en, stop_words_de):
+    """
+    returns the sentence level embedding
+    """
     if lang == 'en':
         text = line.lower()
         l = [token.lemma_ for token in nlp.tokenizer(text)]
@@ -167,6 +178,9 @@ def get_sentence_emb(line,nlp,lang, stop_words_en, stop_words_de):
     return sen.vector
 
 def get_embeddings(f,nlp,lang):
+    """
+    Find the embedding for the whole dataset
+    """
     file = open(f) 
     lines = file.readlines() 
     sentences_vectors =[]

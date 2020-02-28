@@ -9,10 +9,30 @@ from scipy.stats.stats import pearsonr
 
 
 def rmse(predictions, targets):
+    """
+    Root mean squared error
+    
+    Arguments:
+        predictions {list} -- prediction values
+        targets {list} -- real values
+    
+    Returns:
+        [float] -- RMSE
+    """
     return np.sqrt(((predictions - targets) ** 2).mean())
 
 
 def train_strategy_1(X_train_de, X_val_de, y_train_de, y_val_de):
+    """
+    Training strategy 1 models
+
+        
+    Arguments:
+        X_train_de {list} -- X training
+        X_val_de {list} -- X validation
+        y_train_de {list} -- y training
+        y_val_de {list} -- y validation
+    """
     print('#'*10)
     print('IN PROGRESS: Training Strategy_1')
     print('#'*10)
@@ -29,6 +49,15 @@ def train_strategy_1(X_train_de, X_val_de, y_train_de, y_val_de):
 
 
 def train_baseline(X_train_de, X_val_de, y_train_de, y_val_de):
+    """
+    Training the baseline
+    
+    Arguments:
+        X_train_de {list} -- X training
+        X_val_de {list} -- X validation
+        y_train_de {list} -- y training
+        y_val_de {list} -- y validation
+    """
     print('#'*10)
     print('IN PROGRESS: Training Baseline')
     print('#'*10)
@@ -55,7 +84,7 @@ def train_baseline(X_train_de, X_val_de, y_train_de, y_val_de):
 
 def main_strategy_1():
     """
-    the main starting point for strategy 2
+    the main starting point for strategy 1
     """
     
     X_train_de, X_val_de, y_train_de, y_val_de = clean_data_strategy_1()
