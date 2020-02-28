@@ -83,6 +83,8 @@ def writeScores(scores):
             output_file.write("{}\n".format(x))
 
 def download_dependencies():
+
+    os.system('pip install -e git+git://github.com/UKPLab/sentence-transformers@a96ccd3#egg=sentence-transformers')
     os.system('spacy download en_core_web_md')
     os.system('spacy link en_core_web_md en300')
 
