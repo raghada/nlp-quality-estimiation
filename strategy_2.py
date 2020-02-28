@@ -10,8 +10,8 @@ from data_preperation import clean_data_strategy_2, get_GloVe_embedding
 
 import torch.nn.functional as F
 
-LEARNING_RATE = 1e-3
-NUM_EPOCHS = 1
+LEARNING_RATE = 1e-2
+NUM_EPOCHS = 5
 
 
 class SentenceEmbedding(nn.Module):
@@ -207,7 +207,7 @@ def train(model, train_iter, dev_iter):
 
             # loss will be a vector of size (batch_size, ) with losses per every sample
             y_pred = model.forward(batch).view(-1)
-            loss = F.l1_loss(y_pred.double(), batch.score.double(), reduction='none')
+            loss = F.mse_loss(y_pred.double(), batch.score.double(), reduction='none')
             
             # Backprop the average loss and update parameters
             loss.sum().backward()

@@ -11,7 +11,7 @@ from data_preperation import clean_data_strategy_3, prepare_batch_strategy_3
 import torch.nn.functional as F
 
 LEARNING_RATE = 1e-4
-NUM_EPOCHS = 1
+NUM_EPOCHS = 5
 
 
 class FCClassifier(nn.Module):
@@ -125,7 +125,7 @@ def train(model, train_iter, dev_iter):
         # Evaluate on valid set
         model.eval()
         check_pearson_value(model, dev_iter)
-        torch.save(model, 'model_strategy_3_epoch_{}'.format(eidx))
+        torch.save(model, './models/model_strategy_3_epoch_{}'.format(eidx))
 
 def main_strategy_3():
     model = Model()
