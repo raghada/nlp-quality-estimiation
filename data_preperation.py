@@ -32,7 +32,7 @@ def get_df(split='train'):
     """
     src = '.ende.src'
     scores = '.ende.scores'
-    mt = 'ende.mt'
+    mt = '.ende.mt'
 
     en = pd.DataFrame(columns=['id','en'])
     de = pd.DataFrame(columns=['id','de'])
